@@ -1284,11 +1284,17 @@ pub const Surface = extern struct {
             // place.
             if (priv.core_surface) |surface| {
                 const ime_point = surface.imePoint();
+
+                // imePoint's y is the *bottom* of the cursor cell because
+                // AppKit uses a bottom-left origin. GTK wants a top-left
+                // origin rect, and the height has to be real: a compositor
+                // flips the candidate window above this rect when it doesn't
+                // fit below, so a zero-height rect covers the input line.
                 priv.im_context.as(gtk.IMContext).setCursorLocation(&.{
                     .f_x = @intFromFloat(ime_point.x),
-                    .f_y = @intFromFloat(ime_point.y),
+                    .f_y = @intFromFloat(ime_point.y - ime_point.height),
                     .f_width = 1,
-                    .f_height = 1,
+                    .f_height = @intFromFloat(ime_point.height),
                 });
             }
 
